@@ -1511,7 +1511,8 @@ function att_log_convert_url(moodle_url $fullurl) {
 function attforblock_upgrade() {
     global $DB, $CFG;
     $module = $DB->get_record('modules', array('name' => 'attforblock'));
-    if ($module->version <= '2011061800') {
+    $version = get_config('mod_attforblock', 'version');
+    if ($version <= '2011061800') {
         print_error("noupgradefromthisversion", 'attendance');
     }
     if (file_exists($CFG->dirroot.'/mod/attforblock')) {
@@ -1530,7 +1531,8 @@ function attforblock_upgrade() {
     // Now convert module record.
     $module->name = 'attendance';
     $DB->update_record('modules', $module);
-
+    $version = set_config('version', $version, 'mod_attendance');
+    
     // Now convert grade items to 'attendance'
     $sql = "UPDATE {grade_items}
             SET itemmodule = ?
