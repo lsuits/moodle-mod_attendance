@@ -52,28 +52,29 @@ class attforblock_external extends external_api {
 	public static function get_attendance_data($attendanceid = 0) {
 		global $CFG,$DB;
 		
-		require_once("{$CFG->dirroot}/mod/attforblock/locallib.php");
+		require_once("{$CFG->dirroot}/mod/attendance/locallib.php");
 		$params = self::validate_parameters(self::get_attendance_data_parameters(),array('attendanceid'=>$attendanceid));
 		//print_object($params);
-		$cm             = get_coursemodule_from_instance('attforblock', $params['attendanceid'], 0, false, MUST_EXIST);
-		
+		$cm             = get_coursemodule_from_instance('attendance', $params['attendanceid'], 0, false, MUST_EXIST);
+				
 		$course         = $DB->get_record('course', array('id' => $cm->course), '*', MUST_EXIST);
 		
 		$attendancedata = array();
-		$att = $DB->get_record('attforblock', array('id' => $params['attendanceid']), '*', MUST_EXIST);
-		$att = new attforblock($att, $cm, $course, $PAGE->context, $pageparams);
+		$att = $DB->get_record('attendance', array('id' => $params['attendanceid']), '*', MUST_EXIST);
+		$context = context_course::instance($course->id);
+		$att = new attendance($att, $cm, $course, $context, $pageparams);//, $PAGE->context, $pageparams);
 		$statuses = $att->get_statuses();
 		//print_object($statuses);
 		//$sessions = $att->get_filtered_sessions();
 		//print_object($sessions);
-		$users = $att->get_users();
+		$users = $att->get_users(0, 0);
 		//print_object($users);
 		foreach($users as $user) {
 			$stat = $att->get_user_filtered_sessions_log_extended($user->id);
 			//print_object($stat);
 			foreach($stat as $sess) {
 				
-				if (!array_key_exists($sess->id)) {
+				if (!array_key_exists($sess->id, $attendancedata)) {
 					$attendancedata[$sess->id] = array();
 					$attendancedata[$sess->id]['id'] = $sess->id;
 					$attendancedata[$sess->id]['sessiondate'] = $sess->sessdate;
@@ -84,8 +85,6 @@ class attforblock_external extends external_api {
 				$user_status = $statuses[$sess->statusid];
 				$data['status'] = $user_status>acronym;
 				$data['description'] = $user_status->description;
-				//print_object($data);
-				//$data['studenregno']	='a';
 				$attendancedata[$sess->id]['users'][] =$data;
 			}
 		}
